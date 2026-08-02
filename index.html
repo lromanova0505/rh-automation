@@ -76,22 +76,25 @@
             to { transform: rotate(360deg); }
         }
 
-        /* --- Индикатор прогресса --- */
+        /* --- Индикатор прогресса (улучшенная видимость) --- */
         #progress-bar {
             position: fixed;
             top: 0;
             left: 0;
             width: 0%;
-            height: 4px;
+            height: 6px;                /* чуть толще */
             background-color: #464342;
-            z-index: 9998;
-            transition: width 0.1s linear, background-color 0.8s ease;
+            z-index: 10000;             /* выше лоадера */
+            transition: width 0.1s linear, background-color 0.8s ease, box-shadow 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2); /* тень для заметности */
+            border-radius: 0 3px 3px 0;  /* скругление справа */
         }
         body.dark-theme #progress-bar {
             background-color: #D5C9C6;
+            box-shadow: 0 2px 8px rgba(255,255,255,0.2);
         }
 
-        /* --- Остальные стили --- */
+        /* --- Остальные стили (без изменений) --- */
         .slides-container {
             width: 100%;
             display: flex;
@@ -133,7 +136,7 @@
             background-color: #464342;
         }
 
-        /* --- Кнопка переключателя (увеличена длительность перехода) --- */
+        /* --- Кнопка переключателя (с увеличенной длительностью) --- */
         .theme-toggle {
             position: fixed;
             top: 30px;
@@ -279,6 +282,9 @@
             .loader-logo {
                 width: 80px;
             }
+            #progress-bar {
+                height: 4px; /* чуть тоньше на телефонах */
+            }
         }
     </style>
 </head>
@@ -330,7 +336,7 @@
         }
 
         // ============================================================
-        // 2. ПОСТРОЕНИЕ СЛАЙДОВ + ЛОАДЕР С МИНИМАЛЬНЫМ ВРЕМЕНЕМ
+        // 2. ПОСТРОЕНИЕ СЛАЙДОВ + ЛОАДЕР
         // ============================================================
         const totalSlides = 10;
         const slidesContainer = document.getElementById('slidesContainer');
@@ -338,25 +344,15 @@
         const loader = document.getElementById('loader');
         const loaderLogo = document.getElementById('loaderLogo');
 
-        // Функция обновления логотипа в лоадере
         function updateLoaderLogo(theme) {
-            if (theme === 'dark') {
-                loaderLogo.src = 'logo-dark.png';
-            } else {
-                loaderLogo.src = 'logo-light.png';
-            }
+            loaderLogo.src = theme === 'dark' ? 'logo-dark.png' : 'logo-light.png';
         }
 
-        // Определяем текущую тему при загрузке
         const isDarkOnLoad = document.body.classList.contains('dark-theme');
         updateLoaderLogo(isDarkOnLoad ? 'dark' : 'light');
 
-        // Добавляем класс loaded для fade-in логотипа через 0.3 сек
-        setTimeout(() => {
-            loaderLogo.classList.add('loaded');
-        }, 300);
+        setTimeout(() => loaderLogo.classList.add('loaded'), 300);
 
-        // Минимальное время показа лоадера (2 секунды)
         const MIN_LOADER_DISPLAY = 2000;
         let loaderStartTime = Date.now();
 
@@ -387,26 +383,19 @@
             if (imagesLoaded >= totalSlides) {
                 const elapsed = Date.now() - loaderStartTime;
                 const remaining = Math.max(0, MIN_LOADER_DISPLAY - elapsed);
-                setTimeout(() => {
-                    hideLoader();
-                }, remaining);
+                setTimeout(() => hideLoader(), remaining);
             }
         }
 
         function hideLoader() {
             if (!loader.classList.contains('hidden')) {
                 loader.classList.add('hidden');
-                setTimeout(() => {
-                    loader.style.display = 'none';
-                }, 800);
+                setTimeout(() => loader.style.display = 'none', 800);
             }
         }
 
-        // Запасной таймаут
         const fallbackTimeout = setTimeout(() => {
-            if (!loader.classList.contains('hidden')) {
-                hideLoader();
-            }
+            if (!loader.classList.contains('hidden')) hideLoader();
         }, 8000);
 
         buildSlides();
@@ -417,9 +406,7 @@
         const slides = document.querySelectorAll('.slide');
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                }
+                if (entry.isIntersecting) entry.target.classList.add('visible');
             });
         }, {
             threshold: 0.1,
@@ -430,23 +417,19 @@
             slides[0].classList.add('visible');
             const allImgs = document.querySelectorAll('.slide img');
             let allLoaded = true;
-            allImgs.forEach(img => {
-                if (!img.complete) allLoaded = false;
-            });
-            if (allLoaded) {
-                if (imagesLoaded >= totalSlides) {
-                    const elapsed = Date.now() - loaderStartTime;
-                    const remaining = Math.max(0, MIN_LOADER_DISPLAY - elapsed);
-                    setTimeout(() => {
-                        hideLoader();
-                        clearTimeout(fallbackTimeout);
-                    }, remaining);
-                }
+            allImgs.forEach(img => { if (!img.complete) allLoaded = false; });
+            if (allLoaded && imagesLoaded >= totalSlides) {
+                const elapsed = Date.now() - loaderStartTime;
+                const remaining = Math.max(0, MIN_LOADER_DISPLAY - elapsed);
+                setTimeout(() => {
+                    hideLoader();
+                    clearTimeout(fallbackTimeout);
+                }, remaining);
             }
         });
 
         // ============================================================
-        // 4. ИНДИКАТОР ПРОГРЕССА (скролл)
+        // 4. ИНДИКАТОР ПРОГРЕССА
         // ============================================================
         const progressBar = document.getElementById('progress-bar');
 
@@ -459,12 +442,10 @@
 
         window.addEventListener('scroll', updateProgress);
         window.addEventListener('resize', updateProgress);
-        window.addEventListener('orientationchange', () => {
-            setTimeout(updateProgress, 300);
-        });
+        window.addEventListener('orientationchange', () => setTimeout(updateProgress, 300));
 
         // ============================================================
-        // 5. ОБНОВЛЕНИЕ ИЗОБРАЖЕНИЙ (при смене темы)
+        // 5. ОБНОВЛЕНИЕ ИЗОБРАЖЕНИЙ
         // ============================================================
         const allImages = document.querySelectorAll('.slide img');
         let currentTheme = 'light';
@@ -481,7 +462,7 @@
         updateImages('light');
 
         // ============================================================
-        // 6. ПЕРЕКЛЮЧЕНИЕ ТЕМЫ + АНИМАЦИЯ КНОПКИ
+        // 6. ПЕРЕКЛЮЧЕНИЕ ТЕМЫ
         // ============================================================
         const toggleBtn = document.getElementById('themeToggle');
         const body = document.body;
@@ -530,7 +511,7 @@
         toggleBtn.addEventListener('click', toggleTheme);
 
         // ============================================================
-        // 7. АДАПТАЦИЯ ПРИ ПОВОРОТЕ / РЕСАЙЗЕ
+        // 7. АДАПТАЦИЯ ПРИ ПОВОРОТЕ
         // ============================================================
         function handleResize() {
             updateImages(currentTheme);
@@ -548,12 +529,12 @@
         });
 
         // ============================================================
-        // 8. ЗАВЕРШАЮЩИЕ ДЕЙСТВИЯ
+        // 8. ЗАВЕРШЕНИЕ
         // ============================================================
         window.addEventListener('load', () => {
             allImages.forEach(img => img.style.opacity = '1');
             updateImages(currentTheme);
-            updateProgress(); // инициализация прогресса
+            updateProgress();
         });
     </script>
 </body>
