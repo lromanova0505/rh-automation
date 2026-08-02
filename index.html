@@ -48,7 +48,11 @@
             width: 120px;
             height: auto;
             margin-bottom: 30px;
-            transition: opacity 0.3s ease;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+        }
+        .loader-logo.loaded {
+            opacity: 1;
         }
 
         .loader-spinner {
@@ -72,7 +76,22 @@
             to { transform: rotate(360deg); }
         }
 
-        /* --- Остальные стили (без изменений) --- */
+        /* --- Индикатор прогресса --- */
+        #progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 4px;
+            background-color: #464342;
+            z-index: 9998;
+            transition: width 0.1s linear, background-color 0.8s ease;
+        }
+        body.dark-theme #progress-bar {
+            background-color: #D5C9C6;
+        }
+
+        /* --- Остальные стили --- */
         .slides-container {
             width: 100%;
             display: flex;
@@ -114,7 +133,7 @@
             background-color: #464342;
         }
 
-        /* --- Кнопка переключателя с анимациями --- */
+        /* --- Кнопка переключателя (увеличена длительность перехода) --- */
         .theme-toggle {
             position: fixed;
             top: 30px;
@@ -127,7 +146,7 @@
             border-radius: 50px;
             padding: 8px 12px;
             cursor: pointer;
-            transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+            transition: background 0.6s ease, border-color 0.6s ease, box-shadow 0.6s ease, transform 0.3s ease;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
             display: flex;
             align-items: center;
@@ -173,7 +192,7 @@
             align-items: center;
             justify-content: space-between;
             padding: 0 8px;
-            transition: background 0.3s ease;
+            transition: background 0.6s ease;
             transform-origin: center;
         }
 
@@ -200,7 +219,7 @@
             height: 28px;
             background: #ffffff;
             border-radius: 50%;
-            transition: transform 0.3s ease, background 0.3s ease;
+            transition: transform 0.6s ease, background 0.6s ease;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
             z-index: 3;
         }
@@ -265,7 +284,10 @@
 </head>
 <body>
 
-    <!-- Лоадер с PNG-логотипом -->
+    <!-- Прогресс-бар -->
+    <div id="progress-bar"></div>
+
+    <!-- Лоадер с логотипом -->
     <div id="loader">
         <img id="loaderLogo" class="loader-logo" src="logo-light.png" alt="Логотип">
         <div class="loader-spinner"></div>
@@ -316,7 +338,7 @@
         const loader = document.getElementById('loader');
         const loaderLogo = document.getElementById('loaderLogo');
 
-        // Функция обновления логотипа в лоадере в зависимости от темы
+        // Функция обновления логотипа в лоадере
         function updateLoaderLogo(theme) {
             if (theme === 'dark') {
                 loaderLogo.src = 'logo-dark.png';
@@ -328,6 +350,11 @@
         // Определяем текущую тему при загрузке
         const isDarkOnLoad = document.body.classList.contains('dark-theme');
         updateLoaderLogo(isDarkOnLoad ? 'dark' : 'light');
+
+        // Добавляем класс loaded для fade-in логотипа через 0.3 сек
+        setTimeout(() => {
+            loaderLogo.classList.add('loaded');
+        }, 300);
 
         // Минимальное время показа лоадера (2 секунды)
         const MIN_LOADER_DISPLAY = 2000;
@@ -375,7 +402,7 @@
             }
         }
 
-        // Запасной таймаут – если что-то пошло не так, скрываем через 8 секунд
+        // Запасной таймаут
         const fallbackTimeout = setTimeout(() => {
             if (!loader.classList.contains('hidden')) {
                 hideLoader();
@@ -401,7 +428,6 @@
         slides.forEach(slide => observer.observe(slide));
         window.addEventListener('load', () => {
             slides[0].classList.add('visible');
-            // Проверяем, все ли img загружены (на случай, если onload не сработал)
             const allImgs = document.querySelectorAll('.slide img');
             let allLoaded = true;
             allImgs.forEach(img => {
@@ -420,7 +446,25 @@
         });
 
         // ============================================================
-        // 4. ОБНОВЛЕНИЕ ИЗОБРАЖЕНИЙ (при смене темы)
+        // 4. ИНДИКАТОР ПРОГРЕССА (скролл)
+        // ============================================================
+        const progressBar = document.getElementById('progress-bar');
+
+        function updateProgress() {
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+            progressBar.style.width = progress + '%';
+        }
+
+        window.addEventListener('scroll', updateProgress);
+        window.addEventListener('resize', updateProgress);
+        window.addEventListener('orientationchange', () => {
+            setTimeout(updateProgress, 300);
+        });
+
+        // ============================================================
+        // 5. ОБНОВЛЕНИЕ ИЗОБРАЖЕНИЙ (при смене темы)
         // ============================================================
         const allImages = document.querySelectorAll('.slide img');
         let currentTheme = 'light';
@@ -431,14 +475,13 @@
                 const num = index + 1;
                 img.src = `${folder}/slide${num}.png`;
             });
-            // Обновляем логотип в лоадере (если он ещё виден)
             updateLoaderLogo(theme);
         }
 
         updateImages('light');
 
         // ============================================================
-        // 5. ПЕРЕКЛЮЧЕНИЕ ТЕМЫ + АНИМАЦИЯ КНОПКИ
+        // 6. ПЕРЕКЛЮЧЕНИЕ ТЕМЫ + АНИМАЦИЯ КНОПКИ
         // ============================================================
         const toggleBtn = document.getElementById('themeToggle');
         const body = document.body;
@@ -487,10 +530,11 @@
         toggleBtn.addEventListener('click', toggleTheme);
 
         // ============================================================
-        // 6. АДАПТАЦИЯ ПРИ ПОВОРОТЕ / РЕСАЙЗЕ
+        // 7. АДАПТАЦИЯ ПРИ ПОВОРОТЕ / РЕСАЙЗЕ
         // ============================================================
         function handleResize() {
             updateImages(currentTheme);
+            updateProgress();
         }
 
         let resizeTimer;
@@ -504,11 +548,12 @@
         });
 
         // ============================================================
-        // 7. ЗАВЕРШАЮЩИЕ ДЕЙСТВИЯ
+        // 8. ЗАВЕРШАЮЩИЕ ДЕЙСТВИЯ
         // ============================================================
         window.addEventListener('load', () => {
             allImages.forEach(img => img.style.opacity = '1');
             updateImages(currentTheme);
+            updateProgress(); // инициализация прогресса
         });
     </script>
 </body>
