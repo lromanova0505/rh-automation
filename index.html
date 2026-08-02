@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Retail&Horeca — Автоматизация вашего бизнеса</title>
+    <style>
+        /* --- Полный сброс --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #D5C9C6;
+            transition: background-color 0.8s ease;
+        }
+
+        .slides-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .slide {
+            width: 100%;
+            height: 100vh;
+            flex-shrink: 0;
+            position: relative;
+            overflow: hidden;
+            background-color: #D5C9C6;
+            transition: background-color 0.8s ease;
+            opacity: 0;
+            transition: opacity 0.7s ease;
+            will-change: opacity;
+            margin: 0;
+            padding: 0;
+        }
+        .slide.visible {
+            opacity: 1;
+        }
+
+        .slide img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            border-radius: 0;
+            box-shadow: none;
+            transition: opacity 0.8s ease;
+            background-color: transparent;
+        }
+
+        body.dark-theme {
+            background-color: #464342;
+        }
+        body.dark-theme .slide {
+            background-color: #464342;
+        }
+
+        /* --- Кнопка переключателя --- */
+        .theme-toggle {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            border-radius: 50px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .theme-toggle:hover {
+            background: rgba(0, 0, 0, 0.2);
+            transform: scale(1.05);
+        }
+
+        .toggle-track {
+            position: relative;
+            width: 80px;
+            height: 36px;
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 8px;
+            transition: background 0.3s ease;
+        }
+        .toggle-icon {
+            font-size: 18px;
+            line-height: 1;
+            user-select: none;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+        }
+        .toggle-icon svg {
+            display: block;
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+        }
+        .toggle-thumb {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 28px;
+            height: 28px;
+            background: #ffffff;
+            border-radius: 50%;
+            transition: transform 0.3s ease, background 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            z-index: 3;
+        }
+
+        body.dark-theme .theme-toggle {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        body.dark-theme .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+        body.dark-theme .toggle-track {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        body.dark-theme .toggle-thumb {
+            transform: translateX(44px);
+        }
+
+        body.theme-switching .slide img {
+            opacity: 0 !important;
+            transition: opacity 0.8s ease;
+        }
+
+        @media (max-width: 480px) {
+            .theme-toggle {
+                top: 15px;
+                left: 15px;
+                padding: 5px 8px;
+            }
+            .toggle-track {
+                width: 54px;
+                height: 24px;
+                padding: 0 4px;
+            }
+            .toggle-thumb {
+                width: 16px;
+                height: 16px;
+                top: 4px;
+                left: 4px;
+            }
+            body.dark-theme .toggle-thumb {
+                transform: translateX(30px);
+            }
+            .toggle-icon {
+                font-size: 12px;
+            }
+            .toggle-icon svg {
+                width: 14px;
+                height: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <button class="theme-toggle" id="themeToggle">
+        <div class="toggle-track">
+            <span class="toggle-icon" id="iconLeft">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"/>
+                    <line x1="12" y1="1" x2="12" y2="3"/>
+                    <line x1="12" y1="21" x2="12" y2="23"/>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                    <line x1="1" y1="12" x2="3" y2="12"/>
+                    <line x1="21" y1="12" x2="23" y2="12"/>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </svg>
+            </span>
+            <span class="toggle-thumb" id="toggleThumb"></span>
+            <span class="toggle-icon" id="iconRight">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+            </span>
+        </div>
+    </button>
+
+    <div class="slides-container" id="slidesContainer"></div>
+
+    <script>
+        // ============================================================
+        // 1. ОПРЕДЕЛЕНИЕ ПАПКИ (исправлено для iPad)
+        // ============================================================
+        function getFolder(theme) {
+            // Мобильные изображения подключаем только на экранах до 768px в портрете
+            const isMobile = window.innerWidth <= 768 && window.matchMedia('(orientation: portrait)').matches;
+            const base = theme === 'light' ? 'light' : 'dark';
+            return isMobile ? base + '-mobile' : base;
+        }
+
+        // ============================================================
+        // 2. ПОСТРОЕНИЕ СЛАЙДОВ
+        // ============================================================
+        const totalSlides = 10;
+        const slidesContainer = document.getElementById('slidesContainer');
+
+        function buildSlides() {
+            slidesContainer.innerHTML = '';
+            for (let i = 1; i <= totalSlides; i++) {
+                const slide = document.createElement('div');
+                slide.className = 'slide';
+                const img = document.createElement('img');
+                img.src = `light/slide${i}.png`;
+                img.alt = `Слайд ${i}`;
+                slide.appendChild(img);
+                slidesContainer.appendChild(slide);
+            }
+        }
+        buildSlides();
+
+        // ============================================================
+        // 3. ПЛАВНОЕ ПОЯВЛЕНИЕ СЛАЙДОВ
+        // ============================================================
+        const slides = document.querySelectorAll('.slide');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        });
+        slides.forEach(slide => observer.observe(slide));
+        window.addEventListener('load', () => {
+            slides[0].classList.add('visible');
+        });
+
+        // ============================================================
+        // 4. ОБНОВЛЕНИЕ ИЗОБРАЖЕНИЙ
+        // ============================================================
+        const allImages = document.querySelectorAll('.slide img');
+        let currentTheme = 'light';
+
+        function updateImages(theme) {
+            const folder = getFolder(theme);
+            allImages.forEach((img, index) => {
+                const num = index + 1;
+                img.src = `${folder}/slide${num}.png`;
+            });
+        }
+
+        updateImages('light');
+
+        // ============================================================
+        // 5. ПЕРЕКЛЮЧЕНИЕ ТЕМЫ
+        // ============================================================
+        const toggleBtn = document.getElementById('themeToggle');
+        const body = document.body;
+
+        function preloadImages(theme) {
+            const folder = getFolder(theme);
+            allImages.forEach((img, index) => {
+                const num = index + 1;
+                const url = `${folder}/slide${num}.png`;
+                const newImg = new Image();
+                newImg.src = url;
+            });
+        }
+
+        let isAnimating = false;
+
+        function toggleTheme() {
+            if (isAnimating) return;
+            isAnimating = true;
+
+            const isDark = body.classList.contains('dark-theme');
+            const nextTheme = isDark ? 'light' : 'dark';
+
+            preloadImages(nextTheme);
+            body.classList.add('theme-switching');
+
+            setTimeout(() => {
+                updateImages(nextTheme);
+                currentTheme = nextTheme;
+                setTimeout(() => {
+                    body.classList.remove('theme-switching');
+                    isAnimating = false;
+                }, 600);
+            }, 800);
+
+            if (isDark) {
+                body.classList.remove('dark-theme');
+            } else {
+                body.classList.add('dark-theme');
+            }
+        }
+
+        toggleBtn.addEventListener('click', toggleTheme);
+
+        // ============================================================
+        // 6. АДАПТАЦИЯ ПРИ ПОВОРОТЕ
+        // ============================================================
+        function handleResize() {
+            updateImages(currentTheme);
+        }
+
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(handleResize, 300);
+        });
+
+        window.addEventListener('orientationchange', () => {
+            setTimeout(handleResize, 500);
+        });
+
+        // ============================================================
+        // 7. ЗАГРУЗКА
+        // ============================================================
+        window.addEventListener('load', () => {
+            allImages.forEach(img => img.style.opacity = '1');
+            updateImages(currentTheme);
+        });
+    </script>
+</body>
+</html>
