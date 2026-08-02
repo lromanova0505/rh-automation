@@ -72,7 +72,7 @@
             to { transform: rotate(360deg); }
         }
 
-        /* --- Остальные стили --- */
+        /* --- Остальные стили (без изменений) --- */
         .slides-container {
             width: 100%;
             display: flex;
@@ -265,7 +265,7 @@
 </head>
 <body>
 
-    <!-- Лоадер с логотипом -->
+    <!-- Лоадер с PNG-логотипом -->
     <div id="loader">
         <img id="loaderLogo" class="loader-logo" src="logo-light.png" alt="Логотип">
         <div class="loader-spinner"></div>
@@ -308,7 +308,7 @@
         }
 
         // ============================================================
-        // 2. ПОСТРОЕНИЕ СЛАЙДОВ С ОТСЛЕЖИВАНИЕМ ЗАГРУЗКИ
+        // 2. ПОСТРОЕНИЕ СЛАЙДОВ + ЛОАДЕР С МИНИМАЛЬНЫМ ВРЕМЕНЕМ
         // ============================================================
         const totalSlides = 10;
         const slidesContainer = document.getElementById('slidesContainer');
@@ -329,6 +329,10 @@
         const isDarkOnLoad = document.body.classList.contains('dark-theme');
         updateLoaderLogo(isDarkOnLoad ? 'dark' : 'light');
 
+        // Минимальное время показа лоадера (2 секунды)
+        const MIN_LOADER_DISPLAY = 2000;
+        let loaderStartTime = Date.now();
+
         function buildSlides() {
             slidesContainer.innerHTML = '';
             for (let i = 1; i <= totalSlides; i++) {
@@ -340,19 +344,25 @@
 
                 img.onload = function() {
                     imagesLoaded++;
-                    if (imagesLoaded === totalSlides) {
-                        hideLoader();
-                    }
+                    checkAndHideLoader();
                 };
                 if (img.complete) {
                     imagesLoaded++;
-                    if (imagesLoaded === totalSlides) {
-                        hideLoader();
-                    }
+                    checkAndHideLoader();
                 }
 
                 slide.appendChild(img);
                 slidesContainer.appendChild(slide);
+            }
+        }
+
+        function checkAndHideLoader() {
+            if (imagesLoaded >= totalSlides) {
+                const elapsed = Date.now() - loaderStartTime;
+                const remaining = Math.max(0, MIN_LOADER_DISPLAY - elapsed);
+                setTimeout(() => {
+                    hideLoader();
+                }, remaining);
             }
         }
 
@@ -365,6 +375,7 @@
             }
         }
 
+        // Запасной таймаут – если что-то пошло не так, скрываем через 8 секунд
         const fallbackTimeout = setTimeout(() => {
             if (!loader.classList.contains('hidden')) {
                 hideLoader();
@@ -390,15 +401,21 @@
         slides.forEach(slide => observer.observe(slide));
         window.addEventListener('load', () => {
             slides[0].classList.add('visible');
-            // Проверяем, все ли img загружены
+            // Проверяем, все ли img загружены (на случай, если onload не сработал)
             const allImgs = document.querySelectorAll('.slide img');
             let allLoaded = true;
             allImgs.forEach(img => {
                 if (!img.complete) allLoaded = false;
             });
             if (allLoaded) {
-                hideLoader();
-                clearTimeout(fallbackTimeout);
+                if (imagesLoaded >= totalSlides) {
+                    const elapsed = Date.now() - loaderStartTime;
+                    const remaining = Math.max(0, MIN_LOADER_DISPLAY - elapsed);
+                    setTimeout(() => {
+                        hideLoader();
+                        clearTimeout(fallbackTimeout);
+                    }, remaining);
+                }
             }
         });
 
@@ -414,7 +431,7 @@
                 const num = index + 1;
                 img.src = `${folder}/slide${num}.png`;
             });
-            // Также обновляем логотип в лоадере (на случай, если лоадер ещё виден)
+            // Обновляем логотип в лоадере (если он ещё виден)
             updateLoaderLogo(theme);
         }
 
