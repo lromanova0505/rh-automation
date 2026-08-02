@@ -24,7 +24,7 @@
             transition: background-color 0.8s ease;
         }
 
-        /* --- Лоадер --- */
+        /* --- Лоадер с логотипом --- */
         #loader {
             position: fixed;
             top: 0;
@@ -76,33 +76,7 @@
             to { transform: rotate(360deg); }
         }
 
-        /* --- Шкала прогресса (ГАРАНТИРОВАННО ВИДНА) --- */
-        #progress-bar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 0%;
-            height: 16px;                 /* толстая */
-            background: #ff7b00;          /* яркий оранжевый */
-            z-index: 99999;               /* поверх всего */
-            transition: width 0.1s linear, background 0.8s ease;
-            box-shadow: 0 0 20px rgba(255, 123, 0, 0.8);
-            border-radius: 0 8px 8px 0;
-            /* Анимация пульсации для привлечения внимания */
-            animation: pulseGlow 2s infinite;
-        }
-        body.dark-theme #progress-bar {
-            background: #ffaa33;
-            box-shadow: 0 0 25px rgba(255, 170, 51, 0.9);
-        }
-
-        @keyframes pulseGlow {
-            0% { box-shadow: 0 0 10px rgba(255, 123, 0, 0.5); }
-            50% { box-shadow: 0 0 30px rgba(255, 123, 0, 1); }
-            100% { box-shadow: 0 0 10px rgba(255, 123, 0, 0.5); }
-        }
-
-        /* --- Остальные стили (без изменений) --- */
+        /* --- Остальные стили --- */
         .slides-container {
             width: 100%;
             display: flex;
@@ -144,7 +118,7 @@
             background-color: #464342;
         }
 
-        /* --- Кнопка переключателя --- */
+        /* --- Кнопка переключателя (с увеличенной длительностью) --- */
         .theme-toggle {
             position: fixed;
             top: 30px;
@@ -290,16 +264,10 @@
             .loader-logo {
                 width: 80px;
             }
-            #progress-bar {
-                height: 12px; /* чуть тоньше на телефонах */
-            }
         }
     </style>
 </head>
 <body>
-
-    <!-- Прогресс-бар -->
-    <div id="progress-bar"></div>
 
     <!-- Лоадер с логотипом -->
     <div id="loader">
@@ -437,30 +405,7 @@
         });
 
         // ============================================================
-        // 4. ИНДИКАТОР ПРОГРЕССА – ОТЛАДКА
-        // ============================================================
-        const progressBar = document.getElementById('progress-bar');
-
-        // Принудительно показываем шкалу через 1 секунду (для проверки)
-        setTimeout(() => {
-            progressBar.style.width = '30%';
-            console.log('Шкала прогресса принудительно установлена на 30%');
-        }, 1000);
-
-        function updateProgress() {
-            const scrollTop = window.scrollY;
-            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-            const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-            progressBar.style.width = progress + '%';
-            console.log('Прогресс обновлён: ' + progress.toFixed(0) + '%');
-        }
-
-        window.addEventListener('scroll', updateProgress);
-        window.addEventListener('resize', updateProgress);
-        window.addEventListener('orientationchange', () => setTimeout(updateProgress, 300));
-
-        // ============================================================
-        // 5. ОБНОВЛЕНИЕ ИЗОБРАЖЕНИЙ
+        // 4. ОБНОВЛЕНИЕ ИЗОБРАЖЕНИЙ
         // ============================================================
         const allImages = document.querySelectorAll('.slide img');
         let currentTheme = 'light';
@@ -477,7 +422,7 @@
         updateImages('light');
 
         // ============================================================
-        // 6. ПЕРЕКЛЮЧЕНИЕ ТЕМЫ
+        // 5. ПЕРЕКЛЮЧЕНИЕ ТЕМЫ + АНИМАЦИЯ КНОПКИ
         // ============================================================
         const toggleBtn = document.getElementById('themeToggle');
         const body = document.body;
@@ -526,11 +471,10 @@
         toggleBtn.addEventListener('click', toggleTheme);
 
         // ============================================================
-        // 7. АДАПТАЦИЯ ПРИ ПОВОРОТЕ
+        // 6. АДАПТАЦИЯ ПРИ ПОВОРОТЕ / РЕСАЙЗЕ
         // ============================================================
         function handleResize() {
             updateImages(currentTheme);
-            updateProgress();
         }
 
         let resizeTimer;
@@ -544,12 +488,11 @@
         });
 
         // ============================================================
-        // 8. ЗАВЕРШЕНИЕ
+        // 7. ЗАВЕРШАЮЩИЕ ДЕЙСТВИЯ
         // ============================================================
         window.addEventListener('load', () => {
             allImages.forEach(img => img.style.opacity = '1');
             updateImages(currentTheme);
-            setTimeout(updateProgress, 500);
         });
     </script>
 </body>
