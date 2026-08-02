@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Retail&Horeca — Автоматизация вашего бизнеса</title>
     <style>
-        /* --- Полный сброс --- */
+        /* --- Сброс --- */
         * {
             margin: 0;
             padding: 0;
@@ -24,6 +24,55 @@
             transition: background-color 0.8s ease;
         }
 
+        /* --- Лоадер с логотипом --- */
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #D5C9C6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.8s ease;
+        }
+        #loader.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader-logo {
+            width: 120px;
+            height: auto;
+            margin-bottom: 30px;
+            transition: opacity 0.3s ease;
+        }
+
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 5px solid rgba(0, 0, 0, 0.1);
+            border-top-color: #464342;
+            animation: spin 1s linear infinite;
+        }
+
+        body.dark-theme #loader {
+            background-color: #464342;
+        }
+        body.dark-theme .loader-spinner {
+            border-color: rgba(255, 255, 255, 0.1);
+            border-top-color: #ffffff;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* --- Остальные стили --- */
         .slides-container {
             width: 100%;
             display: flex;
@@ -61,14 +110,11 @@
             background-color: transparent;
         }
 
-        body.dark-theme {
-            background-color: #464342;
-        }
         body.dark-theme .slide {
             background-color: #464342;
         }
 
-        /* --- Кнопка переключателя --- */
+        /* --- Кнопка переключателя с анимациями --- */
         .theme-toggle {
             position: fixed;
             top: 30px;
@@ -81,15 +127,40 @@
             border-radius: 50px;
             padding: 8px 12px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
             display: flex;
             align-items: center;
             justify-content: center;
         }
+
         .theme-toggle:hover {
             background: rgba(0, 0, 0, 0.2);
             transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.25);
+        }
+        body.dark-theme .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+        }
+
+        .theme-toggle.animating {
+            animation: pulse 0.6s ease;
+        }
+        .theme-toggle.animating .toggle-track {
+            animation: spin 0.6s ease;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            30% { transform: scale(1.15); }
+            70% { transform: scale(0.95); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .toggle-track {
@@ -103,7 +174,9 @@
             justify-content: space-between;
             padding: 0 8px;
             transition: background 0.3s ease;
+            transform-origin: center;
         }
+
         .toggle-icon {
             font-size: 18px;
             line-height: 1;
@@ -139,6 +212,7 @@
         }
         body.dark-theme .theme-toggle:hover {
             background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
         }
         body.dark-theme .toggle-track {
             background: rgba(255, 255, 255, 0.2);
@@ -179,10 +253,23 @@
                 width: 14px;
                 height: 14px;
             }
+            .theme-toggle:hover {
+                transform: none;
+                box-shadow: none;
+            }
+            .loader-logo {
+                width: 80px;
+            }
         }
     </style>
 </head>
 <body>
+
+    <!-- Лоадер с логотипом -->
+    <div id="loader">
+        <img id="loaderLogo" class="loader-logo" src="logo-light.png" alt="Логотип">
+        <div class="loader-spinner"></div>
+    </div>
 
     <button class="theme-toggle" id="themeToggle">
         <div class="toggle-track">
@@ -212,20 +299,35 @@
 
     <script>
         // ============================================================
-        // 1. ОПРЕДЕЛЕНИЕ ПАПКИ (исправлено для iPad)
+        // 1. ОПРЕДЕЛЕНИЕ ПАПКИ
         // ============================================================
         function getFolder(theme) {
-            // Мобильные изображения подключаем только на экранах до 768px в портрете
             const isMobile = window.innerWidth <= 768 && window.matchMedia('(orientation: portrait)').matches;
             const base = theme === 'light' ? 'light' : 'dark';
             return isMobile ? base + '-mobile' : base;
         }
 
         // ============================================================
-        // 2. ПОСТРОЕНИЕ СЛАЙДОВ
+        // 2. ПОСТРОЕНИЕ СЛАЙДОВ С ОТСЛЕЖИВАНИЕМ ЗАГРУЗКИ
         // ============================================================
         const totalSlides = 10;
         const slidesContainer = document.getElementById('slidesContainer');
+        let imagesLoaded = 0;
+        const loader = document.getElementById('loader');
+        const loaderLogo = document.getElementById('loaderLogo');
+
+        // Функция обновления логотипа в лоадере в зависимости от темы
+        function updateLoaderLogo(theme) {
+            if (theme === 'dark') {
+                loaderLogo.src = 'logo-dark.png';
+            } else {
+                loaderLogo.src = 'logo-light.png';
+            }
+        }
+
+        // Определяем текущую тему при загрузке
+        const isDarkOnLoad = document.body.classList.contains('dark-theme');
+        updateLoaderLogo(isDarkOnLoad ? 'dark' : 'light');
 
         function buildSlides() {
             slidesContainer.innerHTML = '';
@@ -235,10 +337,40 @@
                 const img = document.createElement('img');
                 img.src = `light/slide${i}.png`;
                 img.alt = `Слайд ${i}`;
+
+                img.onload = function() {
+                    imagesLoaded++;
+                    if (imagesLoaded === totalSlides) {
+                        hideLoader();
+                    }
+                };
+                if (img.complete) {
+                    imagesLoaded++;
+                    if (imagesLoaded === totalSlides) {
+                        hideLoader();
+                    }
+                }
+
                 slide.appendChild(img);
                 slidesContainer.appendChild(slide);
             }
         }
+
+        function hideLoader() {
+            if (!loader.classList.contains('hidden')) {
+                loader.classList.add('hidden');
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                }, 800);
+            }
+        }
+
+        const fallbackTimeout = setTimeout(() => {
+            if (!loader.classList.contains('hidden')) {
+                hideLoader();
+            }
+        }, 8000);
+
         buildSlides();
 
         // ============================================================
@@ -258,10 +390,20 @@
         slides.forEach(slide => observer.observe(slide));
         window.addEventListener('load', () => {
             slides[0].classList.add('visible');
+            // Проверяем, все ли img загружены
+            const allImgs = document.querySelectorAll('.slide img');
+            let allLoaded = true;
+            allImgs.forEach(img => {
+                if (!img.complete) allLoaded = false;
+            });
+            if (allLoaded) {
+                hideLoader();
+                clearTimeout(fallbackTimeout);
+            }
         });
 
         // ============================================================
-        // 4. ОБНОВЛЕНИЕ ИЗОБРАЖЕНИЙ
+        // 4. ОБНОВЛЕНИЕ ИЗОБРАЖЕНИЙ (при смене темы)
         // ============================================================
         const allImages = document.querySelectorAll('.slide img');
         let currentTheme = 'light';
@@ -272,12 +414,14 @@
                 const num = index + 1;
                 img.src = `${folder}/slide${num}.png`;
             });
+            // Также обновляем логотип в лоадере (на случай, если лоадер ещё виден)
+            updateLoaderLogo(theme);
         }
 
         updateImages('light');
 
         // ============================================================
-        // 5. ПЕРЕКЛЮЧЕНИЕ ТЕМЫ
+        // 5. ПЕРЕКЛЮЧЕНИЕ ТЕМЫ + АНИМАЦИЯ КНОПКИ
         // ============================================================
         const toggleBtn = document.getElementById('themeToggle');
         const body = document.body;
@@ -298,6 +442,8 @@
             if (isAnimating) return;
             isAnimating = true;
 
+            toggleBtn.classList.add('animating');
+
             const isDark = body.classList.contains('dark-theme');
             const nextTheme = isDark ? 'light' : 'dark';
 
@@ -309,6 +455,7 @@
                 currentTheme = nextTheme;
                 setTimeout(() => {
                     body.classList.remove('theme-switching');
+                    toggleBtn.classList.remove('animating');
                     isAnimating = false;
                 }, 600);
             }, 800);
@@ -323,7 +470,7 @@
         toggleBtn.addEventListener('click', toggleTheme);
 
         // ============================================================
-        // 6. АДАПТАЦИЯ ПРИ ПОВОРОТЕ
+        // 6. АДАПТАЦИЯ ПРИ ПОВОРОТЕ / РЕСАЙЗЕ
         // ============================================================
         function handleResize() {
             updateImages(currentTheme);
@@ -340,7 +487,7 @@
         });
 
         // ============================================================
-        // 7. ЗАГРУЗКА
+        // 7. ЗАВЕРШАЮЩИЕ ДЕЙСТВИЯ
         // ============================================================
         window.addEventListener('load', () => {
             allImages.forEach(img => img.style.opacity = '1');
